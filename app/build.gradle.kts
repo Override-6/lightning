@@ -1,10 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
 }
 
-// Read signing config from environment variables (set in CI)
 val keystorePath: String? = System.getenv("KEYSTORE_PATH")
 val keystorePassword: String? = System.getenv("KEYSTORE_PASSWORD")
 val keyAlias: String? = System.getenv("KEY_ALIAS")
@@ -12,13 +10,12 @@ val keyPassword: String? = System.getenv("KEY_PASSWORD")
 val hasSigningConfig = keystorePath != null && keystorePassword != null && keyAlias != null && keyPassword != null
 
 android {
-    namespace = "dev.maxou.counter"
+    namespace = "dev.maxou.apartment"
     compileSdk = 35
-
     buildToolsVersion = "35.0.0"
 
     defaultConfig {
-        applicationId = "dev.maxou.counter"
+        applicationId = "dev.maxou.apartment"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
@@ -57,20 +54,8 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
-
-    buildFeatures {
-        compose = true
-    }
 }
 
 dependencies {
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
-    debugImplementation(libs.androidx.ui.tooling)
 }
