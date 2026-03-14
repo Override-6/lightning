@@ -50,7 +50,10 @@
       "Bash(/var/gradle-home/.gradle/caches/8.11.1/transforms/7d496932064294d5a8f3aac3ebcf3457/transformed/aapt2-8.7.3-12006047-linux/aapt2 version:*)",
       "Bash(docker run:*)",
       "Bash(export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-arm64 && export PATH=$JAVA_HOME/bin:/opt/gradle-8.11.1/bin:$PATH && export ANDROID_HOME=/var/android-sdk && export GRADLE_USER_HOME=/var/gradle-home/.gradle && gradle :app:compileDebugKotlin --no-daemon 2>&1 | grep -E \"error:|warning:|BUILD|FAILED|What went wrong\" | head -30)",
-      "Bash(echo \"app/build/\" >> /srv/aiprojects/lightning/.gitignore && git reset HEAD app/build/ && git add -A && git commit -m \"$\\(cat <<'EOF'\nReplace counter app with 3D apartment viewer\n\n- OpenGL ES 2.0 first-person 3D apartment \\(no Compose, no external 3D libs\\)\n- Two rooms \\(living room + bedroom\\) connected by a doorway\n- Procedural geometry: walls, floor, ceiling, furniture as colored boxes\n- Two-point diffuse lighting \\(ceiling lights per room\\)\n- Touch controls: left half = virtual joystick, right half = look rotation\n- Canvas overlay: joystick indicator + centre crosshair\n- Landscape orientation, immersive full-screen\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nEOF\n\\)\" && git push 2>&1)"
+      "Bash(echo \"app/build/\" >> /srv/aiprojects/lightning/.gitignore && git reset HEAD app/build/ && git add -A && git commit -m \"$\\(cat <<'EOF'\nReplace counter app with 3D apartment viewer\n\n- OpenGL ES 2.0 first-person 3D apartment \\(no Compose, no external 3D libs\\)\n- Two rooms \\(living room + bedroom\\) connected by a doorway\n- Procedural geometry: walls, floor, ceiling, furniture as colored boxes\n- Two-point diffuse lighting \\(ceiling lights per room\\)\n- Touch controls: left half = virtual joystick, right half = look rotation\n- Canvas overlay: joystick indicator + centre crosshair\n- Landscape orientation, immersive full-screen\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nEOF\n\\)\" && git push 2>&1)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:sceneview.github.io)"
     ]
   }
 }

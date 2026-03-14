@@ -4,23 +4,11 @@ import android.view.MotionEvent
 import kotlin.math.hypot
 import kotlin.math.min
 
-/**
- * Handles multi-touch input:
- *   Left half  → virtual joystick (movement)
- *   Right half → drag to look
- *
- * Thread safety:
- *   moveX / moveY  – @Volatile floats, written on UI thread, read on GL thread.
- *   lookDelta      – synchronized, accumulated on UI thread, consumed on GL thread.
- *   joystickState  – synchronized snapshot for the overlay view.
- */
 class TouchController {
 
-    // ── Output read by GL thread ──────────────────────────────────────────────
-    @Volatile var moveX: Float = 0f   // strafe  −1..+1
-    @Volatile var moveY: Float = 0f   // forward −1..+1
+    @Volatile var moveX: Float = 0f
+    @Volatile var moveY: Float = 0f
 
-    // ── Look delta ────────────────────────────────────────────────────────────
     private val lookLock = Any()
     private var lookDxAccum = 0f
     private var lookDyAccum = 0f
@@ -29,14 +17,12 @@ class TouchController {
         lookDxAccum += dx; lookDyAccum += dy
     }
 
-    /** Called from GL thread each frame; resets the accumulator. */
     fun consumeLookDelta(): Pair<Float, Float> = synchronized(lookLock) {
         val r = lookDxAccum to lookDyAccum
         lookDxAccum = 0f; lookDyAccum = 0f
         r
     }
 
-    // ── Joystick visual state (shared with OverlayView) ───────────────────────
     data class JoystickState(
         val active: Boolean = false,
         val anchorX: Float = 0f, val anchorY: Float = 0f,
@@ -48,8 +34,7 @@ class TouchController {
     private var jsState = JoystickState()
     fun getJoystickState(): JoystickState = synchronized(jsLock) { jsState }
 
-    // ── Touch tracking ────────────────────────────────────────────────────────
-    private var joyPointerId = -1
+    private var joyPointerId  = -1
     private var lookPointerId = -1
     private var lookLastX = 0f
     private var lookLastY = 0f
@@ -65,23 +50,19 @@ class TouchController {
                 val ey  = event.getY(idx)
                 if (ex < viewWidth / 2f && joyPointerId == -1) {
                     joyPointerId = pid
-                    synchronized(jsLock) {
-                        jsState = JoystickState(true, ex, ey, ex, ey, JS_RADIUS)
-                    }
+                    synchronized(jsLock) { jsState = JoystickState(true, ex, ey, ex, ey, JS_RADIUS) }
                     moveX = 0f; moveY = 0f
                 } else if (ex >= viewWidth / 2f && lookPointerId == -1) {
-                    lookPointerId = pid
-                    lookLastX = ex; lookLastY = ey
+                    lookPointerId = pid; lookLastX = ex; lookLastY = ey
                 }
             }
-
             MotionEvent.ACTION_MOVE -> {
                 for (i in 0 until event.pointerCount) {
                     val pid = event.getPointerId(i)
                     val ex  = event.getX(i)
                     val ey  = event.getY(i)
                     when (pid) {
-                        joyPointerId -> updateJoystick(ex, ey)
+                        joyPointerId  -> updateJoystick(ex, ey)
                         lookPointerId -> {
                             addLookDelta(ex - lookLastX, ey - lookLastY)
                             lookLastX = ex; lookLastY = ey
@@ -89,41 +70,28 @@ class TouchController {
                     }
                 }
             }
-
             MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
                 val pid = event.getPointerId(event.actionIndex)
-                if (pid == joyPointerId) {
-                    joyPointerId = -1
-                    moveX = 0f; moveY = 0f
-                    synchronized(jsLock) { jsState = JoystickState() }
-                }
-                if (pid == lookPointerId) lookPointerId = -1
+                if (pid == joyPointerId)  { joyPointerId  = -1; moveX = 0f; moveY = 0f; synchronized(jsLock) { jsState = JoystickState() } }
+                if (pid == lookPointerId) { lookPointerId = -1 }
             }
-
             MotionEvent.ACTION_CANCEL -> {
-                joyPointerId = -1; lookPointerId = -1
-                moveX = 0f; moveY = 0f
+                joyPointerId = -1; lookPointerId = -1; moveX = 0f; moveY = 0f
                 synchronized(jsLock) { jsState = JoystickState() }
             }
         }
     }
 
     private fun updateJoystick(ex: Float, ey: Float) {
-        val state = synchronized(jsLock) { jsState }
-        val dx = ex - state.anchorX
-        val dy = ey - state.anchorY
+        val s   = synchronized(jsLock) { jsState }
+        val dx  = ex - s.anchorX; val dy = ey - s.anchorY
         val dist = hypot(dx, dy)
-        val clampedDist = min(dist, JS_RADIUS)
-        val ratio = if (dist > 0) clampedDist / dist else 0f
-        val thumbX = state.anchorX + dx * ratio
-        val thumbY = state.anchorY + dy * ratio
-        synchronized(jsLock) {
-            jsState = state.copy(thumbX = thumbX, thumbY = thumbY)
-        }
-
-        val nx = (thumbX - state.anchorX) / JS_RADIUS  // −1..+1
-        val ny = (thumbY - state.anchorY) / JS_RADIUS  // −1..+1
+        val r   = if (dist > 0) min(dist, JS_RADIUS) / dist else 0f
+        val tx  = s.anchorX + dx * r; val ty = s.anchorY + dy * r
+        synchronized(jsLock) { jsState = s.copy(thumbX = tx, thumbY = ty) }
+        val nx = (tx - s.anchorX) / JS_RADIUS
+        val ny = (ty - s.anchorY) / JS_RADIUS
         moveX = if (kotlin.math.abs(nx) > DEAD_ZONE) nx else 0f
-        moveY = if (kotlin.math.abs(ny) > DEAD_ZONE) -ny else 0f  // screen-Y inverted
+        moveY = if (kotlin.math.abs(ny) > DEAD_ZONE) -ny else 0f
     }
 }
