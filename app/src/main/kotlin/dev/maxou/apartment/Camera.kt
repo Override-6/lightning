@@ -12,7 +12,7 @@ class Camera {
     var posZ = 5f      // start in centre of living room
 
     var yaw   = 180f   // degrees: 0=facing −Z, 180=facing +Z (toward TV)
-    var pitch = −5f    // degrees: slightly downward
+    var pitch = -5f    // degrees: slightly downward
 
     val moveSpeed = 4.0f   // m/s
 
