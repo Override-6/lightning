@@ -64,7 +64,7 @@ object SceneBuilder {
         val sh = floatArrayOf(0.38f, 0.34f, 0.28f)   // R, G, B constant band
         val ibl = IndirectLight.Builder()
             .irradiance(1, sh)
-            .intensity(18_000f)
+            .intensity(3_000f)
             .build(sv.engine)
         sv.indirectLight = ibl
     }
@@ -73,12 +73,12 @@ object SceneBuilder {
 
     private fun addCeilingLights(sv: SceneView) {
         // Living-room warm point light
-        pointLight(sv, 0f, 2.9f, 4f,  intensity = 5_000f, r = 1.0f, g = 0.92f, b = 0.78f, falloff = 12f)
+        pointLight(sv, 0f, 2.9f, 4f,  intensity = 1_200f, r = 1.0f, g = 0.92f, b = 0.78f, falloff = 12f)
         // Bedroom warm point light
-        pointLight(sv, 0f, 2.9f, -4f, intensity = 4_000f, r = 1.0f, g = 0.92f, b = 0.78f, falloff = 12f)
+        pointLight(sv, 0f, 2.9f, -4f, intensity = 900f, r = 1.0f, g = 0.92f, b = 0.78f, falloff = 12f)
         // Cool soft fill (moonlight through windows)
         LightNode(sv.engine, LightManager.Type.DIRECTIONAL) {
-            intensity(800f)
+            intensity(150f)
             color(0.72f, 0.80f, 1.0f)
             direction(0.4f, -1f, 0.3f)
             castShadows(true)
@@ -86,7 +86,7 @@ object SceneBuilder {
 
         // Set camera exposure for indoor (ISO 800, f/2, 1/60s)
         sv.engine.getCameraComponent(sv.cameraNode.entity)
-            ?.setExposure(2f, 1f / 60f, 800f)
+            ?.setExposure(4f, 1f / 60f, 200f)
     }
 
     private fun pointLight(sv: SceneView, x: Float, y: Float, z: Float,
