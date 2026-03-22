@@ -59,7 +59,7 @@ object SceneBuilder {
                 enabled = true
             }
             // PCSS — Percentage Closer Soft Shadows: physically-based penumbrae
-            shadowType = ShadowType.PCSS
+            setShadowType(ShadowType.PCSS)
             softShadowOptions = softShadowOptions.apply {
                 penumbraScale      = 3.0f   // broader soft penumbra
                 penumbraRatioScale = 2.0f
