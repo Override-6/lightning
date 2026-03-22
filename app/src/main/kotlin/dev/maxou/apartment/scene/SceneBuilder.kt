@@ -3,6 +3,7 @@ package dev.maxou.apartment.scene
 import com.google.android.filament.IndirectLight
 import com.google.android.filament.LightManager
 import com.google.android.filament.View as FilamentView
+import com.google.android.filament.View.ShadowType
 import io.github.sceneview.SceneView
 import io.github.sceneview.loaders.MaterialLoader
 import io.github.sceneview.math.Color
@@ -37,22 +38,46 @@ object SceneBuilder {
 
     private fun setupPostProcessing(sv: SceneView) {
         sv.view.apply {
-            // SSAO — subtle contact shadows
+            // SSAO — contact shadows with higher quality for RTX-like precision
             ambientOcclusionOptions = ambientOcclusionOptions.apply {
-                enabled  = true
-                radius   = 0.4f
-                power    = 1.2f
-                bias     = 0.003f
+                enabled       = true
+                radius        = 0.5f
+                power         = 1.6f
+                bias          = 0.002f
+                resolution    = 1.0f   // full-res SSAO
+                intensity     = 1.2f
+                bilateralThreshold = 0.05f
             }
-            // Bloom — light glow
+            // Bloom — stronger filament glow around lights
             bloomOptions = bloomOptions.apply {
                 enabled  = true
-                strength = 0.25f
-                levels   = 6
+                strength = 0.35f
+                levels   = 7
             }
             // Temporal AA
             temporalAntiAliasingOptions = temporalAntiAliasingOptions.apply {
                 enabled = true
+            }
+            // PCSS — Percentage Closer Soft Shadows: physically-based penumbrae
+            shadowType = ShadowType.PCSS
+            softShadowOptions = softShadowOptions.apply {
+                penumbraScale      = 3.0f   // broader soft penumbra
+                penumbraRatioScale = 2.0f
+            }
+            // Screen Space Reflections — RTX-like reflections on glass/mirrors
+            screenSpaceReflectionsOptions = screenSpaceReflectionsOptions.apply {
+                enabled     = true
+                thickness   = 0.1f
+                bias        = 0.01f
+                maxDistance = 4.0f
+                stride      = 2.0f
+            }
+            // Vignette — cinematic light fall-off at screen edges
+            vignetteOptions = vignetteOptions.apply {
+                midPoint  = 0.55f
+                roundness = 1.0f
+                feather   = 0.40f
+                enabled   = true
             }
         }
     }
@@ -64,7 +89,7 @@ object SceneBuilder {
         val sh = floatArrayOf(0.38f, 0.34f, 0.28f)   // R, G, B constant band
         val ibl = IndirectLight.Builder()
             .irradiance(1, sh)
-            .intensity(3_000f)
+            .intensity(5_000f)   // boosted for RTX-style HDR dynamic range
             .build(sv.engine)
         sv.indirectLight = ibl
     }
@@ -72,30 +97,33 @@ object SceneBuilder {
     // ── Ceiling lights ─────────────────────────────────────────────────────────
 
     private fun addCeilingLights(sv: SceneView) {
-        // Living-room warm point light
-        pointLight(sv, 0f, 2.9f, 4f,  intensity = 1_200f, r = 1.0f, g = 0.92f, b = 0.78f, falloff = 12f)
-        // Bedroom warm point light
-        pointLight(sv, 0f, 2.9f, -4f, intensity = 900f, r = 1.0f, g = 0.92f, b = 0.78f, falloff = 12f)
-        // Cool soft fill (moonlight through windows)
+        // Living-room warm point light — shadow-casting for RTX-like local shadows
+        pointLight(sv, 0f, 2.9f, 4f,  intensity = 1_500f, r = 1.0f, g = 0.92f, b = 0.78f, falloff = 14f, shadows = true)
+        // Secondary fill point to soften hard edges in living room
+        pointLight(sv, -3f, 2.7f, 6f, intensity = 400f, r = 1.0f, g = 0.88f, b = 0.70f, falloff = 8f, shadows = false)
+        // Bedroom warm point light — shadow-casting
+        pointLight(sv, 0f, 2.9f, -4f, intensity = 1_100f, r = 1.0f, g = 0.92f, b = 0.78f, falloff = 14f, shadows = true)
+        // Cool directional fill (moonlight through windows) — sharper for RTX contrast
         LightNode(sv.engine, LightManager.Type.DIRECTIONAL) {
-            intensity(150f)
-            color(0.72f, 0.80f, 1.0f)
+            intensity(220f)
+            color(0.68f, 0.78f, 1.0f)
             direction(0.4f, -1f, 0.3f)
             castShadows(true)
         }.also { sv.addChildNode(it) }
 
-        // Set camera exposure for indoor (ISO 800, f/2, 1/60s)
+        // Set camera exposure for indoor HDR (mimics high-quality render)
         sv.engine.getCameraComponent(sv.cameraNode.entity)
-            ?.setExposure(4f, 1f / 60f, 200f)
+            ?.setExposure(4f, 1f / 60f, 400f)
     }
 
     private fun pointLight(sv: SceneView, x: Float, y: Float, z: Float,
-                           intensity: Float, r: Float, g: Float, b: Float, falloff: Float) {
+                           intensity: Float, r: Float, g: Float, b: Float, falloff: Float,
+                           shadows: Boolean = false) {
         LightNode(sv.engine, LightManager.Type.POINT) {
             intensity(intensity)
             color(r, g, b)
             falloff(falloff)
-            castShadows(false)
+            castShadows(shadows)
         }.also {
             it.worldPosition = Position(x, y, z)
             sv.addChildNode(it)
@@ -183,7 +211,7 @@ object SceneBuilder {
         val wood     = ml.pbr(0.55f, 0.36f, 0.16f, rough = 0.60f)
         val tvDark   = ml.pbr(0.12f, 0.12f, 0.13f, rough = 0.50f, metal = 0.45f)
         val screen   = ml.pbr(0.02f, 0.02f, 0.02f, rough = 0.15f, metal = 0.6f)
-        val screenGlow = ml.pbr(0.08f, 0.14f, 0.22f, rough = 0.15f)         // faint blue glow
+        val screenGlow = ml.pbr(0.18f, 0.28f, 0.45f, rough = 0.10f)         // brighter glow benefits from RTX bloom
         val shelf    = ml.pbr(0.58f, 0.38f, 0.18f, rough = 0.65f)
         val lampMetal= ml.pbr(0.72f, 0.58f, 0.22f, rough = 0.30f, metal = 0.85f) // brass
         val lampShade= ml.pbr(0.95f, 0.90f, 0.75f, rough = 0.85f)
